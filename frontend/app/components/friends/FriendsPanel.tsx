@@ -5,8 +5,14 @@ import { apiFetch } from "@/lib/api";
 import type { Friend, FriendRequest } from "@/lib/types";
 import AddFriendModal from "./AddFriendModel";
 import FriendRequestsModal from "./FriendRequestsModel";
+import { getOrCreateDM } from "@/lib/chat";
 
-export default function FriendsPanel() {
+type Props = {
+  onSelectFriend?: (f: Friend) => void;
+  onConversationReady?: (conversationId: number) => void;
+};
+
+export default function FriendsPanel({ onSelectFriend, onConversationReady }: Props) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [incoming, setIncoming] = useState<FriendRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,6 +42,13 @@ export default function FriendsPanel() {
   useEffect(() => {
     loadAll();
   }, []);
+
+  async function handleClickFriend(f: Friend) {
+    onSelectFriend?.(f);
+    // gọi backend lấy conversation id
+    const res = await getOrCreateDM(f.id);
+    onConversationReady?.(res.conversation.id);
+  }
 
   return (
     <div className="h-full flex flex-col">
@@ -69,7 +82,8 @@ export default function FriendsPanel() {
             {friends.map((u) => (
               <li
                 key={u.id}
-                className="rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 hover:bg-slate-900"
+                onClick={() => handleClickFriend(u)}
+                className="cursor-pointer rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 hover:bg-slate-900"
               >
                 <div className="font-medium">{u.username}</div>
                 <div className="text-xs text-slate-400">{u.email}</div>
