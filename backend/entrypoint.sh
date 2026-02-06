@@ -9,4 +9,10 @@ echo "Postgres is up!"
 
 python manage.py migrate --noinput
 
-exec gunicorn config.wsgi:application --bind 0.0.0.0:8000
+# Nếu docker-compose truyền command (vd daphne), ưu tiên chạy command đó
+if [ "$#" -gt 0 ]; then
+  exec "$@"
+fi
+
+# Mặc định chạy ASGI server (WebSocket OK)
+exec daphne -b 0.0.0.0 -p 8000 config.asgi:application

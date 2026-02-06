@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 
 User = settings.AUTH_USER_MODEL
 
@@ -70,3 +71,21 @@ class Message(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
+
+class ConversationReadState(models.Model):
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name="read_states")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="conversation_read_states")
+
+    last_seen_message = models.ForeignKey(
+        Message, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    last_seen_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["conversation", "user"], name="uniq_read_state"),
+        ]
+
+    def mark_seen(self, message: Message | None):
+        self.last_seen_message = message
+        self.last_seen_at = timezone.now()

@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, ListCreateAPIView
 
-from .models import Conversation, ConversationParticipant, Message
+from .models import Conversation, ConversationParticipant, Message, ConversationReadState
 from .serializers import ConversationSerializer, MessageSerializer
 from .services import get_or_create_dm
 from friends.services import are_friends
@@ -25,6 +25,28 @@ class ConversationListView(ListAPIView):
     def get_queryset(self):
         return Conversation.objects.filter(participants__user=self.request.user).distinct().order_by("-created_at")
 
+    def list(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        data = self.get_serializer(qs, many=True).data
+
+        conv_ids = [c["id"] for c in data]
+
+        states = {
+            s.conversation_id: s.last_seen_message_id
+            for s in ConversationReadState.objects.filter(user=request.user, conversation_id__in=conv_ids)
+        }
+
+        for c in data:
+            conv_id = c["id"]
+            last_seen = states.get(conv_id)
+
+            q = Message.objects.filter(conversation_id=conv_id).exclude(sender=request.user)
+            if last_seen:
+                q = q.filter(id__gt=last_seen)
+
+            c["unread_count"] = q.count()
+
+        return Response(data)
 
 class CreateDMView(APIView):
     permission_classes = [IsAuthenticated]
@@ -78,11 +100,9 @@ class ConversationMessagesView(ListCreateAPIView):
 
         next_before_id = None
         if data:
-            # data đang theo order_by("-id") => phần tử cuối có id nhỏ nhất
             next_before_id = data[-1]["id"]
 
         return Response({"results": data, "next_before_id": next_before_id})
-
 
     def create(self, request, *args, **kwargs):
         conversation_id = self.kwargs["conversation_id"]

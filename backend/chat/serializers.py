@@ -15,10 +15,10 @@ class ConversationParticipantSerializer(serializers.ModelSerializer):
 
 class ConversationSerializer(serializers.ModelSerializer):
     participants = ConversationParticipantSerializer(many=True, read_only=True)
-
+    unread_count = serializers.IntegerField(read_only=True)
     class Meta:
         model = Conversation
-        fields = ["id", "type", "created_at", "participants"]
+        fields = ["id", "type", "created_at", "participants", "unread_count"]
 
 
 class MessageSerializer(serializers.ModelSerializer):
