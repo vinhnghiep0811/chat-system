@@ -3,19 +3,90 @@
 import { useEffect, useRef, useState } from "react";
 import type { Message } from "@/lib/types";
 import { fetchConversationMessages, sendConversationMessage } from "@/lib/chat";
+import { chatWsUrl } from "@/lib/chat";
 
 type Props = {
+  onSeen?: () => void
   conversationId: number;
   title: string;
 };
 
-export default function ChatPanel({ conversationId, title }: Props) {
+export default function ChatPanel({onSeen, conversationId, title }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [nextBeforeId, setNextBeforeId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [text, setText] = useState("");
+  const wsRef = useRef<WebSocket | null>(null);
 
   const listRef = useRef<HTMLDivElement>(null);
+
+  function sendSeen(ws: WebSocket, msgs: Message[]) {
+    const lastReal = msgs.find((m) => m.id > 0); // bỏ optimistic id âm
+    if (!lastReal) return;
+
+    ws.send(JSON.stringify({
+      type: "read.seen",
+      last_seen_message_id: lastReal.id,
+    }));
+  }
+
+  useEffect(() => {
+    // đóng ws cũ
+    wsRef.current?.close();
+    wsRef.current = null;
+
+    const ws = new WebSocket(chatWsUrl(conversationId));
+    wsRef.current = ws;
+
+    ws.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+
+      if (data.type === "message.new") {
+        const msg: Message = {
+          id: data.message.id,
+          sender_id: data.message.sender_id,
+          content: data.message.content,
+          created_at: data.message.created_at,
+          thread_root: data.message.thread_root_id ?? null,
+        };
+
+        // bạn đang hiển thị newest-first => prepend
+        setMessages((prev) => [msg, ...prev]);
+
+        // đang mở conversation thì mark seen luôn
+        try { sendSeen(ws, [msg, ...messages]); } catch { }
+      }
+
+      if (data.type === "connected") {
+        // sau khi connect, mark seen theo message đang load
+        // (đợi loadInitial chạy xong sẽ gọi thêm 1 lần ở effect khác)
+      }
+      if (data.type === "read.updated") {
+        onSeen?.();
+      }
+
+    };
+
+    ws.onclose = () => {
+      // optional: console.log("ws closed");
+    };
+
+    return () => {
+      ws.close();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
+
+  useEffect(() => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (!messages.length) return;
+
+    // gửi seen theo message mới nhất (id lớn nhất vì newest-first)
+    sendSeen(ws, messages);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
+
 
   async function loadInitial() {
     setLoading(true);
@@ -46,25 +117,17 @@ export default function ChatPanel({ conversationId, title }: Props) {
     if (!content) return;
     setText("");
 
-    // optimistic UI (append đầu danh sách vì newest-first)
-    const optimistic: Message = {
-      id: -Date.now(),
-      sender_id: -1,
-      content,
-      created_at: new Date().toISOString(),
-      thread_root: null,
-    };
-    setMessages((prev) => [optimistic, ...prev]);
-
-    try {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      // fallback: nếu ws chưa mở, dùng REST như cũ
       const saved = await sendConversationMessage(conversationId, content);
-      setMessages((prev) => [saved, ...prev.filter((m) => m.id !== optimistic.id)]);
-    } catch {
-      // rollback nếu fail
-      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
-      setText(content);
+      setMessages((prev) => [saved, ...prev]);
+      return;
     }
+
+    ws.send(JSON.stringify({ type: "message.send", content }));
   }
+
 
   useEffect(() => {
     loadInitial();

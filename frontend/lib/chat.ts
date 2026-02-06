@@ -60,3 +60,8 @@ export function sendThreadMessage(rootMessageId: number, content: string) {
     json: { content },
   });
 }
+
+export function chatWsUrl(conversationId: number) {
+  // dev local
+  return `ws://localhost:8000/ws/chat/${conversationId}/`;
+}
