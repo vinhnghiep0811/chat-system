@@ -21,5 +21,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/users/", include("users.urls")),
     path("api/friends/", include("friends.urls")),
+    path("api/chat/", include("chat.urls")),
     path("api/health/", lambda r: __import__("django.http").http.HttpResponse("ok")),
 ]
