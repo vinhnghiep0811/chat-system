@@ -10,6 +10,8 @@ from .serializers import ConversationSerializer, MessageSerializer
 from .services import get_or_create_dm
 from friends.services import are_friends
 from django.shortcuts import get_object_or_404
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 User = get_user_model()
 
@@ -227,3 +229,37 @@ class ThreadMessagesView(ListCreateAPIView):
             thread_root=root,
         )
         return Response(MessageSerializer(msg).data, status=201)
+
+class MessageDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, message_id: int):
+        msg = get_object_or_404(Message, id=message_id)
+
+        # chỉ member của conversation mới được động vào
+        if not is_member(msg.conversation_id, request.user.id):
+            return Response({"detail": "Forbidden"}, status=403)
+
+        # policy: chỉ sender được xóa tin nhắn của mình
+        if msg.sender_id != request.user.id:
+            return Response({"detail": "Not allowed"}, status=403)
+
+        conversation_id = msg.conversation_id
+
+        # Hard delete
+        msg.delete()
+
+        # Broadcast realtime cho room
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"conversation_{conversation_id}",
+            {
+                "type": "chat.broadcast",
+                "payload": {
+                    "type": "message.deleted",
+                    "message_id": message_id,
+                },
+            },
+        )
+
+        return Response({"id": message_id, "deleted": True}, status=200)   

@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 
-from .serializers import RegisterSerializer, LoginSerializer
+from .serializers import RegisterSerializer, LoginSerializer, ResendVerificationSerializer
 from .token import make_email_verify_token, verify_email_token
 from .cookies import set_auth_cookies, clear_auth_cookies
 from .permissions import IsVerified
@@ -23,24 +23,32 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-
+        created_now = getattr(user, "_created_now", True)
         token = make_email_verify_token(user.id)
         frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
-        verify_url = f"{frontend_url}/verify-email?token={token}"
+        backend_url = getattr(settings, "BACKEND_URL", "http://localhost:8000")
+        verify_url = f"{backend_url}/api/users/verify-email?token={token}"
 
-
-        send_mail(
-            subject="Verify your email",
-            message=f"Click to verify: {verify_url}",
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=False,
-        )
-
+        try:
+            send_mail(
+                subject="Verify your email",
+                message=f"Click to verify: {verify_url}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            if created_now and not user.is_verified:
+                user.delete()
+            return Response(
+                {"error": "Could not send verification email. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
         return Response(
-            {"message": "Registered. Please verify email."},
-            status=status.HTTP_201_CREATED,
+            {"message": "Registered. Please verify email." if created_now else "Email not verified yet. Verification email resent."},
+            status=status.HTTP_201_CREATED if created_now else status.HTTP_200_OK,
         )
+
 
 class VerifyEmailView(APIView):
     authentication_classes = []
@@ -66,14 +74,44 @@ class VerifyEmailView(APIView):
             user.save(update_fields=["is_verified"])
 
         # Tạo JWT và set cookie
-        refresh = RefreshToken.for_user(user)
-        access = str(refresh.access_token)
+        # refresh = RefreshToken.for_user(user)
+        # access = str(refresh.access_token)
 
         # Redirect về FE và set cookie trên response
         # (cookie set được vì response là từ backend)
-        resp = redirect(f"{settings.FRONTEND_URL}/app")
-        set_auth_cookies(resp, access=access, refresh=str(refresh), secure=not settings.DEBUG)
+        resp = redirect(f"{settings.FRONTEND_URL}/auth/login?verified=1")
+        # set_auth_cookies(resp, access=access, refresh=str(refresh), secure=not settings.DEBUG)
         return resp
+
+class ResendVerificationView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request):
+        serializer = ResendVerificationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data["email"]
+        user = User.objects.filter(email=email).first()
+
+        if user and not user.is_verified:
+            token = make_email_verify_token(user.id)
+            backend_url = getattr(settings, "BACKEND_URL", "http://localhost:8000")
+            verify_url = f"{backend_url}/api/users/verify-email?token={token}"
+
+            send_mail(
+                subject="Verify your email",
+                message=f"Click to verify: {verify_url}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=True,  # tránh lộ lỗi mail
+            )
+
+        # Luôn trả 200 để tránh lộ email
+        return Response(
+            {"message": "If the email exists, a verification email has been sent."},
+            status=status.HTTP_200_OK,
+        )
 
 class LoginView(APIView):
     authentication_classes = []
