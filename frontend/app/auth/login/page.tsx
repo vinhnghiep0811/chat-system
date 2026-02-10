@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { apiFetch } from "@/lib/api";
+
+function isEmail(s: string) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+}
 
 type LoginResponse = {
     message: string;
@@ -22,10 +26,20 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [needVerify, setNeedVerify] = useState(false);
+    const [resendLoading, setResendLoading] = useState(false);
+    const [resendMsg, setResendMsg] = useState<string | null>(null);
+
+    const emailForResend = useMemo(() => {
+        const v = identifier.trim();
+        return isEmail(v) ? v : null;
+    }, [identifier]);
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError(null);
+        setNeedVerify(false);
+        setResendMsg(null);
         setLoading(true);
 
         try {
@@ -37,11 +51,45 @@ export default function LoginPage() {
             const next = new URLSearchParams(window.location.search).get("next") || "/";
             router.replace(next);
         } catch (err: any) {
-            setError(err?.message || "Login failed");
+            const rawCode = err?.data?.code;
+            const code = Array.isArray(rawCode) ? rawCode[0] : rawCode;
+
+            const rawDetail = err?.data?.detail;
+            const detail = Array.isArray(rawDetail) ? rawDetail[0] : rawDetail;
+
+            setError(detail || err?.message || "Login failed");
+
+            if (code === "EMAIL_NOT_VERIFIED") {
+                setNeedVerify(true);
+            }
         } finally {
             setLoading(false);
         }
 
+    }
+
+    async function onResend() {
+        setResendMsg(null);
+        setError(null);
+
+        if (!emailForResend) {
+            setError("Vui lòng nhập email (không phải username) để gửi lại email xác minh.");
+            return;
+        }
+
+        setResendLoading(true);
+        try {
+            const resp = await apiFetch("/api/users/resend-verification/", {
+                method: "POST",
+                json: { email: emailForResend },
+            });
+
+            setResendMsg("Nếu email tồn tại, email xác minh đã được gửi.");
+        } catch (err: any) {
+            setError(err?.message || "Không gửi lại được email xác minh.");
+        } finally {
+            setResendLoading(false);
+        }
     }
 
     return (
@@ -88,6 +136,27 @@ export default function LoginPage() {
                     {loading ? "Đang đăng nhập..." : "Đăng nhập"}
                 </button>
             </form>
+
+            {/* Nếu backend báo chưa verify -> hiện nút resend */}
+            {needVerify && (
+                <div className="rounded-lg border p-3 space-y-2">
+                    <div className="text-sm">
+                        Tài khoản của bạn chưa được xác minh email.
+                    </div>
+                    <button
+                        onClick={onResend}
+                        disabled={resendLoading}
+                        className="w-full rounded-lg border bg-white py-2 font-medium disabled:opacity-60"
+                    >
+                        {resendLoading ? "Đang gửi lại..." : "Gửi lại email xác minh"}
+                    </button>
+                    {!emailForResend && (
+                        <div className="text-xs text-slate-500">
+                            * Bạn đang nhập username. Để gửi lại mail, hãy nhập email.
+                        </div>
+                    )}
+                </div>
+            )}
 
             <p className="text-sm text-slate-600">
                 Chưa có tài khoản?{" "}

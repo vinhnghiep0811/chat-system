@@ -2,20 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Message } from "@/lib/types";
-import { fetchConversationMessages, sendConversationMessage } from "@/lib/chat";
+import { fetchConversationMessages, sendConversationMessage, deleteMessage } from "@/lib/chat";
 import { chatWsUrl } from "@/lib/chat";
 
 type Props = {
+  myUserId: number; // NEW
   onSeen?: () => void
   conversationId: number;
   title: string;
 };
 
-export default function ChatPanel({onSeen, conversationId, title }: Props) {
+export default function ChatPanel({ onSeen, conversationId, title, myUserId }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [nextBeforeId, setNextBeforeId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [text, setText] = useState("");
+  const [ctx, setCtx] = useState<null | { x: number; y: number; messageId: number }>(null);
+
   const wsRef = useRef<WebSocket | null>(null);
 
   const listRef = useRef<HTMLDivElement>(null);
@@ -29,6 +32,16 @@ export default function ChatPanel({onSeen, conversationId, title }: Props) {
       last_seen_message_id: lastReal.id,
     }));
   }
+
+  useEffect(() => {
+    function close() { setCtx(null); }
+    window.addEventListener("click", close);
+    window.addEventListener("scroll", close, true);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("scroll", close, true);
+    };
+  }, []);
 
   useEffect(() => {
     // đóng ws cũ
@@ -64,6 +77,12 @@ export default function ChatPanel({onSeen, conversationId, title }: Props) {
       if (data.type === "read.updated") {
         onSeen?.();
       }
+
+      if (data.type === "message.deleted") {
+        const id = Number(data.message_id);
+        setMessages((prev) => prev.filter((m) => m.id !== id));
+      }
+
 
     };
 
@@ -128,6 +147,17 @@ export default function ChatPanel({onSeen, conversationId, title }: Props) {
     ws.send(JSON.stringify({ type: "message.send", content }));
   }
 
+  async function handleDelete(messageId: number) {
+    setCtx(null);
+    try {
+      await deleteMessage(messageId);
+      // WS sẽ broadcast => cả 2 bên tự remove
+    } catch (e) {
+      console.error(e);
+      await loadInitial();
+    }
+  }
+
 
   useEffect(() => {
     loadInitial();
@@ -148,13 +178,40 @@ export default function ChatPanel({onSeen, conversationId, title }: Props) {
           </button>
         </div>
 
-        {(messages ?? []).map((m) => (
-          <div key={m.id} className="rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2">
-            <div className="text-sm text-slate-100">{m.content}</div>
-            <div className="text-[11px] text-slate-500 mt-1">{new Date(m.created_at).toLocaleString()}</div>
-          </div>
-        ))}
+        {(messages ?? []).map((m) => {
+          const canDelete = m.sender_id === myUserId;
+
+          return (
+            <div
+              key={m.id}
+              className="rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2"
+              onContextMenu={(e) => {
+                if (!canDelete) return;
+                e.preventDefault();
+                setCtx({ x: e.clientX, y: e.clientY, messageId: m.id });
+              }}
+            >
+              <div className="text-sm text-slate-100">{m.content}</div>
+              <div className="text-[11px] text-slate-500 mt-1">{new Date(m.created_at).toLocaleString()}</div>
+            </div>
+          );
+        })}
+
       </div>
+      {ctx && (
+        <div
+          className="fixed z-50 min-w-[140px] rounded-xl border border-slate-700 bg-slate-950 shadow-xl overflow-hidden"
+          style={{ left: ctx.x, top: ctx.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="w-full text-left px-3 py-2 text-sm text-red-300 hover:bg-slate-800"
+            onClick={() => handleDelete(ctx.messageId)}
+          >
+            Xóa
+          </button>
+        </div>
+      )}
 
       <div className="p-3 border-t border-slate-800 flex gap-2">
         <input

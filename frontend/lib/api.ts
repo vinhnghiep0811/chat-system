@@ -44,11 +44,19 @@ export async function apiFetch<T>(
   }
 
   const data: any = await safeJson(res);
+  const pickFirst = (v: any) => (Array.isArray(v) ? v[0] : v);
 
   if (!res.ok) {
-    const msg = data?.message || data?.detail || `HTTP ${res.status}`;
-    throw new Error(msg);
+    const msg =
+      pickFirst(data?.message) ||
+      pickFirst(data?.detail) ||
+      `HTTP ${res.status}`;
+    const err: any = new Error(msg);
+    err.status = res.status;
+    err.data = data;
+    throw err;
   }
+
 
   return data as T;
 }
