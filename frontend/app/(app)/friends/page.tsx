@@ -35,14 +35,14 @@ export default function FriendsPage() {
       <section className="flex-1 p-6">
         {activeConversationId && activeFriend && meId ? (
           <ChatPanel
-          myUserId={meId}
+            myUserId={meId}
             conversationId={activeConversationId}
             title={activeFriend.username}
-            onSeen={() => setRefreshKey((k) => k + 1)}   // ✅ seen xong refresh unread ở sidebar
+            onSeen={() => setRefreshKey((k) => k + 1)} // Refresh unread count in sidebar after seen.
           />
         ) : (
           <div className="h-full rounded-2xl border border-slate-800 bg-slate-900/30 grid place-items-center">
-            <div className="text-slate-300">Chọn một người bạn để bắt đầu chat</div>
+            <div className="text-slate-300">Select a friend to start chatting</div>
           </div>
         )}
       </section>

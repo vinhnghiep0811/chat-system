@@ -37,7 +37,7 @@ export default function RegisterPage() {
       });
 
       setSuccess(data.message || "Registered");
-      // tuỳ bạn: chuyển sang login ngay
+      // Optional: redirect to login immediately.
       setTimeout(() => router.push("/auth/login"), 400);
     } catch (err: any) {
       setError(err?.message || "Register failed");
@@ -49,8 +49,8 @@ export default function RegisterPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold">Đăng ký</h1>
-        <p className="text-sm text-slate-600">Tạo tài khoản mới.</p>
+        <h1 className="text-2xl font-bold">Sign up</h1>
+        <p className="text-sm text-slate-600">Create a new account.</p>
       </div>
 
       {error && (
@@ -123,14 +123,14 @@ export default function RegisterPage() {
           disabled={loading}
           className="w-full rounded-lg bg-slate-900 text-white py-2 font-medium disabled:opacity-60"
         >
-          {loading ? "Đang đăng ký..." : "Đăng ký"}
+          {loading ? "Signing up..." : "Sign up"}
         </button>
       </form>
 
       <p className="text-sm text-slate-600">
-        Đã có tài khoản?{" "}
+        Already have an account?{" "}
         <Link className="text-slate-900 font-semibold underline" href="/auth/login">
-          Đăng nhập
+          Log in
         </Link>
       </p>
     </div>

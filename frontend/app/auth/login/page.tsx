@@ -134,7 +134,7 @@ export default function LoginPage() {
         <div className="min-h-screen grid lg:grid-cols-2">
             <section className="hidden lg:flex flex-col justify-center bg-slate-950 px-12 xl:px-20 text-white">
                 <p className="text-sm uppercase tracking-[0.2em] text-slate-300">Welcome to</p>
-                <h1 className="mt-4 text-5xl xl:text-6xl font-extrabold leading-tight">ChatSphere</h1>
+                <h1 className="mt-4 text-5xl xl:text-6xl font-extrabold leading-tight">CThread</h1>
                 <p className="mt-6 max-w-md text-slate-300 text-lg leading-relaxed">
                     Connect instantly, share ideas, and keep every conversation in one secure place.
                 </p>
