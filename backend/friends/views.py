@@ -127,6 +127,21 @@ class FriendsListView(APIView):
         for f in qs:
             friend_ids.append(f.user2_id if f.user1_id == uid else f.user1_id)
 
-        users = User.objects.filter(id__in=friend_ids).only("id", "username", "email")
-        data = [{"id": u.id, "username": u.username, "email": u.email} for u in users]
+        users = User.objects.filter(id__in=friend_ids).only(
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+        )
+        data = [
+            {
+                "id": u.id,
+                "username": u.username,
+                "email": u.email,
+                "first_name": u.first_name or "",
+                "last_name": u.last_name or "",
+            }
+            for u in users
+        ]
         return Response(data, status=status.HTTP_200_OK)

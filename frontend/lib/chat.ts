@@ -65,3 +65,9 @@ export function chatWsUrl(conversationId: number) {
   // dev local
   return `ws://localhost:8000/ws/chat/${conversationId}/`;
 }
+
+export function deleteMessage(messageId: number) {
+  return apiFetch<{ id: number; deleted: boolean }>(`/api/chat/messages/${messageId}/`, {
+    method: "DELETE",
+  });
+}

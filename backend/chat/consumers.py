@@ -159,14 +159,37 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not msg:
             raise ValueError("Message not found in this conversation.")
 
+        # Nếu client mark seen tới cuối MAIN chat, nhưng có thread replies mới hơn,
+        # thì nâng mốc seen lên message mới nhất của toàn conversation để unread reset đúng.
+        latest_main_id = (
+            Message.objects.filter(conversation_id=conversation_id, thread_root__isnull=True)
+            .order_by("-id")
+            .values_list("id", flat=True)
+            .first()
+        )
+        latest_any_id = (
+            Message.objects.filter(conversation_id=conversation_id)
+            .order_by("-id")
+            .values_list("id", flat=True)
+            .first()
+        )
+
+        effective_seen_id = last_seen_message_id
+        if latest_main_id and latest_any_id and last_seen_message_id >= latest_main_id:
+            effective_seen_id = max(last_seen_message_id, latest_any_id)
+
+        effective_msg = Message.objects.filter(id=effective_seen_id, conversation_id=conversation_id).first()
+        if not effective_msg:
+            effective_msg = msg
+
         state, _ = ConversationReadState.objects.get_or_create(
             conversation_id=conversation_id,
             user_id=user_id,
         )
 
         # chỉ update nếu tiến lên (không lùi)
-        if state.last_seen_message_id is None or last_seen_message_id > state.last_seen_message_id:
-            state.last_seen_message = msg
+        if state.last_seen_message_id is None or effective_seen_id > state.last_seen_message_id:
+            state.last_seen_message = effective_msg
             state.last_seen_at = timezone.now()
             state.save(update_fields=["last_seen_message", "last_seen_at"])
 

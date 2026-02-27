@@ -41,13 +41,27 @@ class FriendRequestSerializer(serializers.ModelSerializer):
         fields = ["id", "from_user", "to_user", "status", "created_at", "responded_at"]
 
     def get_from_user(self, obj):
-        return {"id": obj.from_user_id, "username": getattr(obj.from_user, "username", None), "email": obj.from_user.email}
+        return {
+            "id": obj.from_user_id,
+            "username": getattr(obj.from_user, "username", None),
+            "email": obj.from_user.email,
+            "first_name": getattr(obj.from_user, "first_name", "") or "",
+            "last_name": getattr(obj.from_user, "last_name", "") or "",
+        }
 
     def get_to_user(self, obj):
-        return {"id": obj.to_user_id, "username": getattr(obj.to_user, "username", None), "email": obj.to_user.email}
+        return {
+            "id": obj.to_user_id,
+            "username": getattr(obj.to_user, "username", None),
+            "email": obj.to_user.email,
+            "first_name": getattr(obj.to_user, "first_name", "") or "",
+            "last_name": getattr(obj.to_user, "last_name", "") or "",
+        }
 
 
 class FriendSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     username = serializers.CharField()
     email = serializers.EmailField()
+    first_name = serializers.CharField(allow_blank=True, required=False)
+    last_name = serializers.CharField(allow_blank=True, required=False)

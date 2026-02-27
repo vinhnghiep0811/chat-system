@@ -33,8 +33,9 @@ export default function FriendsPage() {
       </section>
 
       <section className="flex-1 p-6">
-        {activeConversationId && activeFriend ? (
+        {activeConversationId && activeFriend && meId ? (
           <ChatPanel
+          myUserId={meId}
             conversationId={activeConversationId}
             title={activeFriend.username}
             onSeen={() => setRefreshKey((k) => k + 1)}   // ✅ seen xong refresh unread ở sidebar

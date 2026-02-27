@@ -53,6 +53,9 @@ class Message(models.Model):
         related_name="thread_replies",
     )
 
+    thread_enable = models.BooleanField(default=False)  # ✅ NEW
+
+
     class Meta:
         indexes = [
             models.Index(fields=["conversation", "created_at"]),
@@ -67,6 +70,9 @@ class Message(models.Model):
         # thread_root phải cùng conversation
         if self.thread_root_id and self.thread_root.conversation_id != self.conversation_id:
             raise ValueError("thread_root must be in the same conversation.")
+
+        if self.thread_root_id and self.thread_enable:
+            raise ValueError("thread_enable can only be true for root messages.")
 
     def save(self, *args, **kwargs):
         self.full_clean()
