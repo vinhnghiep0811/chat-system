@@ -140,6 +140,13 @@ class CreateThreadFromExistingMessageView(APIView):
         if not is_member(root.conversation_id, request.user.id):
             return Response({"detail": "Forbidden"}, status=403)
 
+        if root.sender_id != request.user.id:
+            return Response({"detail": "You can only create a thread from your own message."}, status=403)
+
+        if not root.thread_enable:
+            root.thread_enable = True
+            root.save(update_fields=["thread_enable"])
+
         # Thread id = root message id
         return Response({"thread_root_id": root.id}, status=200)
 
@@ -165,6 +172,7 @@ class CreateThreadWithNewTopicView(APIView):
             sender=request.user,
             content=title,
             thread_root=None,
+            thread_enable=True
         )
         return Response({"thread_root_id": root.id}, status=201)
 
@@ -221,6 +229,10 @@ class ThreadMessagesView(ListCreateAPIView):
         content = (request.data.get("content") or "").strip()
         if not content:
             return Response({"detail": "content is required"}, status=400)
+
+        if not root.thread_enable:
+            root.thread_enable = True
+            root.save(update_fields=["thread_enable"])
 
         msg = Message.objects.create(
             conversation=root.conversation,

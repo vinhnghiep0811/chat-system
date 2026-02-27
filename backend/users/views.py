@@ -9,7 +9,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 
-from .serializers import RegisterSerializer, LoginSerializer, ResendVerificationSerializer
+from .serializers import (
+    RegisterSerializer,
+    LoginSerializer,
+    ResendVerificationSerializer,
+    UpdateProfileSerializer,
+    ChangePasswordSerializer,
+)
 from .token import make_email_verify_token, verify_email_token
 from .cookies import set_auth_cookies, clear_auth_cookies
 from .permissions import IsVerified
@@ -201,4 +207,42 @@ class MeView(APIView):
                 "is_verified": u.is_verified,
             },
             status=status.HTTP_200_OK,
+        )
+
+    def patch(self, request):
+        serializer = UpdateProfileSerializer(
+            request.user, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        u = request.user
+        return Response(
+            {
+                "id": u.id,
+                "username": u.username,
+                "email": u.email,
+                "first_name": u.first_name,
+                "last_name": u.last_name,
+                "is_verified": u.is_verified,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated, IsVerified]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        user.set_password(serializer.validated_data["new_password"])
+        user.save(update_fields=["password"])
+
+        return Response(
+            {"message": "Password updated successfully."}, status=status.HTTP_200_OK
         )
