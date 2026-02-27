@@ -6,7 +6,7 @@ import { apiFetch } from "@/lib/api";
 
 const nav = [
   { href: "/friends", label: "Friends" },
-  { href: "/groups", label: "Group" },
+  // { href: "/groups", label: "Group" },
   { href: "/profile", label: "Profile" },
 ];
 

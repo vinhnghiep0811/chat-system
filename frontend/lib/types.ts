@@ -2,6 +2,8 @@ export type UserLite = {
   id: number;
   username: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
 };
 
 export type Friend = UserLite;
@@ -34,9 +36,19 @@ export type Message = {
   content: string;
   created_at: string;
   thread_root: number | null;
+  thread_enable: boolean
 };
 
 export type PaginatedMessages = {
   results: Message[];
   next_before_id: number | null;
+};
+
+export type MeUser = {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_verified: boolean;
 };

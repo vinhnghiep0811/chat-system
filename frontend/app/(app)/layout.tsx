@@ -6,7 +6,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <aside className="w-64 border-r border-slate-800">
         <Sidebar />
       </aside>
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 min-h-0 overflow-y-auto">{children}</main>
     </div>
   );
 }

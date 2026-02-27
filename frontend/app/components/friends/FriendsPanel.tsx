@@ -121,6 +121,8 @@ export default function FriendsPanel({ meId, refreshKey, onSelectFriend, onConve
             {friends.map((u) => {
               const dm = dmMap.get(u.id);
               const unread = dm?.unread ?? 0;
+              const fullName = `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim();
+              const displayName = fullName || u.username;
 
               return (
                 <li
@@ -129,8 +131,8 @@ export default function FriendsPanel({ meId, refreshKey, onSelectFriend, onConve
                   className="cursor-pointer rounded-xl border border-slate-800 bg-slate-900/40 px-3 py-2 hover:bg-slate-900 flex items-center justify-between"
                 >
                   <div>
-                    <div className="font-medium">{u.username}</div>
-                    <div className="text-xs text-slate-400">{u.email}</div>
+                    <div className="font-medium">{displayName}</div>
+                    <div className="text-xs text-slate-400">@{u.username}</div>
                   </div>
 
                   {unread > 0 && (
