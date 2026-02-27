@@ -94,12 +94,12 @@ export default function ThreadPanel({ rootMessage, myUserId, onClose, incomingMe
       <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
         <div className="font-semibold">Thread</div>
         <button className="text-sm text-slate-300 hover:text-white" onClick={onClose}>
-          Dong
+          Close
         </button>
       </div>
 
       <div className="p-3 border-b border-slate-800">
-        <div className="text-xs text-slate-400 mb-1">Tin nhan goc</div>
+        <div className="text-xs text-slate-400 mb-1">Root message</div>
         <div className={`flex ${isRootMine ? "justify-end" : "justify-start"}`}>
           <div
             className={`max-w-[85%] rounded-2xl px-3 py-2 border ${
@@ -131,7 +131,7 @@ export default function ThreadPanel({ rootMessage, myUserId, onClose, incomingMe
             disabled={loading || !nextBeforeId}
             className="text-xs text-slate-300 border border-slate-700 rounded-lg px-3 py-1 disabled:opacity-50"
           >
-            {nextBeforeId ? (loading ? "Dang tai..." : "Tai them") : "Het replies"}
+            {nextBeforeId ? (loading ? "Loading..." : "Load more") : "No more replies"}
           </button>
         </div>
 
@@ -148,7 +148,7 @@ export default function ThreadPanel({ rootMessage, myUserId, onClose, incomingMe
               >
                 <div className="text-sm break-words">{m.content}</div>
                 <div className={`text-[11px] mt-1 ${isMine ? "text-sky-100/80" : "text-slate-500"}`}>
-                  {isMine ? "Ban" : `User ${m.sender_id}`} • {new Date(m.created_at).toLocaleString()}
+                  {isMine ? "You" : `User ${m.sender_id}`} - {new Date(m.created_at).toLocaleString()}
                 </div>
               </div>
             </div>
@@ -163,11 +163,11 @@ export default function ThreadPanel({ rootMessage, myUserId, onClose, incomingMe
           onKeyDown={(e) => {
             if (e.key === "Enter") onSend();
           }}
-          placeholder="Tra loi trong thread..."
+          placeholder="Reply in thread..."
           className="flex-1 rounded-xl bg-slate-950/40 border border-slate-800 px-3 py-2 outline-none"
         />
         <button onClick={onSend} className="rounded-xl bg-white text-black px-4 py-2 font-medium">
-          Gui
+          Send
         </button>
       </div>
     </div>

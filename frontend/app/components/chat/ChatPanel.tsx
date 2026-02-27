@@ -143,7 +143,7 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
   }
 
   async function onCreateNewThread() {
-    const titleText = window.prompt("Nhap tieu de thread");
+    const titleText = window.prompt("Enter thread title");
     const threadTitle = (titleText || "").trim();
     if (!threadTitle) return;
 
@@ -234,7 +234,7 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
               disabled={loading || !nextBeforeId}
               className="text-xs text-slate-300 border border-slate-700 rounded-lg px-3 py-1 disabled:opacity-50"
             >
-              {nextBeforeId ? (loading ? "Dang tai..." : "Tai them") : "Het tin nhan"}
+              {nextBeforeId ? (loading ? "Loading..." : "Load more") : "No more messages"}
             </button>
           </div>
 
@@ -309,7 +309,7 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
                 className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
                 onClick={() => handleCreateThreadFromMessage(ctx.message.id)}
               >
-                Tao thread tu tin nhan nay
+                Create thread from this message
               </button>
             )}
 
@@ -322,7 +322,7 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
                   setIncomingThreadMessage(null);
                 }}
               >
-                Mo thread
+                Open thread
               </button>
             )}
 
@@ -331,7 +331,7 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
                 className="w-full text-left px-3 py-2 text-sm text-red-300 hover:bg-slate-800"
                 onClick={() => handleDelete(ctx.message.id)}
               >
-                Xoa
+                Delete
               </button>
             )}
           </div>
@@ -344,11 +344,11 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
             onKeyDown={(e) => {
               if (e.key === "Enter") onSend();
             }}
-            placeholder="Nhap tin nhan..."
+            placeholder="Type a message..."
             className="flex-1 rounded-xl bg-slate-950/40 border border-slate-800 px-3 py-2 outline-none"
           />
           <button onClick={onSend} className="rounded-xl bg-white text-black px-4 py-2 font-medium">
-            Gui
+            Send
           </button>
         </div>
       </div>

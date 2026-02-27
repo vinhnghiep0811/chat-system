@@ -99,23 +99,23 @@ export default function FriendsPanel({ meId, refreshKey, onSelectFriend, onConve
             onClick={() => setOpenAdd(true)}
             className="rounded-lg bg-white text-black px-3 py-1.5 text-sm font-medium"
           >
-            + Kết bạn
+            + Add Friend
           </button>
 
           <button
             onClick={() => setOpenReq(true)}
             className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm"
           >
-            Lời mời {pendingCount > 0 ? `(${pendingCount})` : ""}
+            Requests {pendingCount > 0 ? `(${pendingCount})` : ""}
           </button>
         </div>
       </div>
 
       <div className="p-3">
         {loading ? (
-          <div className="text-slate-300 text-sm">Đang tải...</div>
+          <div className="text-slate-300 text-sm">Loading...</div>
         ) : friends.length === 0 ? (
-          <div className="text-slate-300 text-sm">Chưa có bạn bè.</div>
+          <div className="text-slate-300 text-sm">No friends yet.</div>
         ) : (
           <ul className="space-y-2">
             {friends.map((u) => {

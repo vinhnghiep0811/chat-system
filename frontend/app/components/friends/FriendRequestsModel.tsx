@@ -49,7 +49,7 @@ export default function FriendRequestsModal({
     <div className="fixed inset-0 bg-black/60 grid place-items-center p-4">
       <div className="w-full max-w-lg rounded-2xl bg-slate-950 border border-slate-800 p-5">
         <div className="flex items-center justify-between">
-          <div className="font-semibold">Lời mời kết bạn</div>
+          <div className="font-semibold">Friend Requests</div>
           <button onClick={onClose} className="text-slate-400 hover:text-white">
             ✕
           </button>
@@ -57,7 +57,7 @@ export default function FriendRequestsModal({
 
         <div className="mt-4">
           {pending.length === 0 ? (
-            <div className="text-sm text-slate-300">Không có lời mời nào.</div>
+            <div className="text-sm text-slate-300">No requests.</div>
           ) : (
             <ul className="space-y-2">
               {pending.map((r) => (
@@ -76,14 +76,14 @@ export default function FriendRequestsModal({
                       onClick={() => reject(r.id)}
                       className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm disabled:opacity-60"
                     >
-                      Từ chối
+                      Decline
                     </button>
                     <button
                       disabled={loadingId === r.id}
                       onClick={() => accept(r.id)}
                       className="rounded-lg bg-white text-black px-3 py-1.5 text-sm font-medium disabled:opacity-60"
                     >
-                      {loadingId === r.id ? "..." : "Chấp nhận"}
+                      {loadingId === r.id ? "..." : "Accept"}
                     </button>
                   </div>
                 </li>
