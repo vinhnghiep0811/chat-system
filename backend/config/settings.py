@@ -150,14 +150,12 @@ CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = os.getenv(
     "CORS_ALLOWED_ORIGINS",
-    "http://localhost:3000",
-    "https://chat-system-bay.vercel.app",
+    "http://localhost:3000,https://chat-system-bay.vercel.app",
 ).split(",")
 
 CSRF_TRUSTED_ORIGINS = os.getenv(
     "CSRF_TRUSTED_ORIGINS",
-    "http://localhost:3000",
-    "https://chat-system-bay.vercel.app",
+    "http://localhost:3000,https://chat-system-bay.vercel.app",
 ).split(",")
 
 # Password validation
