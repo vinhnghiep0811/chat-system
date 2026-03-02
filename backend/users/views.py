@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 
-from backend.users.email_service import send_verification_email
+from .email_service import send_verification_email
 
 from .serializers import (
     RegisterSerializer,
