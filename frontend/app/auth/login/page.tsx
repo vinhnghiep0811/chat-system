@@ -46,7 +46,7 @@ export default function LoginPage() {
                 json: { identifier, password },
             });
 
-            const next = new URLSearchParams(window.location.search).get("next") || "/";
+            const next = new URLSearchParams(window.location.search).get("next") || "/friends";
             router.replace(next);
         } catch (err: any) {
             const rawCode = err?.data?.code;
