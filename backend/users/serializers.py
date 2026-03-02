@@ -16,32 +16,32 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop("password")
-        email = validated_data.get("email")
+        email = validated_data.get("email", "").lower().strip()
+        validated_data["email"] = email
+
         existing = User.objects.filter(email=email).first()
 
         if existing:
             if existing.is_verified:
                 raise serializers.ValidationError({"email": "Email already exists."})
 
-            # Email đã tồn tại nhưng chưa verify -> coi như resend/re-register
-            # Update thông tin (tuỳ bạn muốn update gì)
+            # update fields nếu có
             for field in ["first_name", "last_name", "username"]:
-                if field in validated_data and validated_data[field]:
-                    setattr(existing, field, validated_data[field])
+                val = validated_data.get(field)
+                if val:
+                    setattr(existing, field, val)
 
-            # Option: cho set lại password khi re-register
             existing.set_password(password)
-
             existing.is_active = True
-            existing.is_verified = False
-            existing.save(update_fields=["first_name", "last_name", "username", "password", "is_active", "is_verified"])
-            existing._created_now = False  # flag để view biết không phải user mới tạo
+            existing.is_verified = True
+            existing.save()  # để Django tự handle đủ field
+            existing._created_now = False
             return existing
-        
+
         user = User(**validated_data)
         user.set_password(password)
         user.is_active = True
-        user.is_verified = False
+        user.is_verified = True
         user.save()
         user._created_now = True
         return user

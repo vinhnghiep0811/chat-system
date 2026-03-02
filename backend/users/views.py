@@ -27,6 +27,37 @@ logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
+# class RegisterView(APIView):
+#     authentication_classes = []
+#     permission_classes = []
+
+#     def post(self, request):
+#         serializer = RegisterSerializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         user = serializer.save()
+#         created_now = getattr(user, "_created_now", True)
+#         token = make_email_verify_token(user.id)
+#         frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
+#         backend_url = getattr(settings, "BACKEND_URL", "http://localhost:8000")
+#         verify_url = f"{backend_url}/api/users/verify-email?token={token}"
+
+#         try:
+#             send_verification_email(user.email, verify_url)
+#             mail_sent = True
+#         except Exception:
+#             logger.exception("Resend send_verification_email failed user_id=%s", user.id)
+#             mail_sent = False
+
+#         return Response(
+#             {
+#                 "message": "Registered. Please verify email." if mail_sent
+#                         else "Registered, but could not send verification email. Please use 'Resend verification email'.",
+#                 "mail_sent": mail_sent,
+#             },
+#             status=status.HTTP_201_CREATED if created_now else status.HTTP_200_OK,
+#         )
+
+
 class RegisterView(APIView):
     authentication_classes = []
     permission_classes = []
@@ -35,28 +66,15 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        created_now = getattr(user, "_created_now", True)
-        token = make_email_verify_token(user.id)
-        frontend_url = getattr(settings, "FRONTEND_URL", "http://localhost:3000")
-        backend_url = getattr(settings, "BACKEND_URL", "http://localhost:8000")
-        verify_url = f"{backend_url}/api/users/verify-email?token={token}"
 
-        try:
-            send_verification_email(user.email, verify_url)
-            mail_sent = True
-        except Exception:
-            logger.exception("Resend send_verification_email failed user_id=%s", user.id)
-            mail_sent = False
+        # Bỏ verify email
+        user.is_verified = True
+        user.save(update_fields=["is_verified"])
 
         return Response(
-            {
-                "message": "Registered. Please verify email." if mail_sent
-                        else "Registered, but could not send verification email. Please use 'Resend verification email'.",
-                "mail_sent": mail_sent,
-            },
-            status=status.HTTP_201_CREATED if created_now else status.HTTP_200_OK,
+            {"message": "Registered successfully."},
+            status=status.HTTP_201_CREATED,
         )
-
 
 class VerifyEmailView(APIView):
     authentication_classes = []
