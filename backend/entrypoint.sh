@@ -1,11 +1,31 @@
 #!/bin/sh
 set -e
 
-echo "Waiting for postgres..."
-while ! nc -z "$POSTGRES_HOST" "$POSTGRES_PORT"; do
-  sleep 0.2
-done
-echo "Postgres is up!"
+echo "Waiting for database via DATABASE_URL (psycopg2)..."
+
+python - <<'PY'
+import os, time
+import psycopg2
+from urllib.parse import urlparse
+
+db_url = os.environ.get("DATABASE_URL")
+if not db_url:
+    raise SystemExit("DATABASE_URL is not set")
+
+u = urlparse(db_url)
+print(f"DB host={u.hostname} port={u.port or 5432} db={u.path.lstrip('/') or 'postgres'}")
+
+for i in range(60):
+    try:
+        conn = psycopg2.connect(db_url, connect_timeout=3)
+        conn.close()
+        print("Database is up!")
+        break
+    except Exception as e:
+        time.sleep(1)
+else:
+    raise SystemExit("Database not reachable after 60s")
+PY
 
 python manage.py migrate --noinput
 
@@ -14,5 +34,5 @@ if [ "$#" -gt 0 ]; then
   exec "$@"
 fi
 
-# Mặc định chạy ASGI server (WebSocket OK)
-exec daphne -b 0.0.0.0 -p 8000 config.asgi:application
+# Render cần lắng nghe đúng PORT mà nó cấp
+exec daphne -b 0.0.0.0 -p "${PORT:-8000}" config.asgi:application
