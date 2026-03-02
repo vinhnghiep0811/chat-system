@@ -7,26 +7,19 @@ function isPublic(pathname: string) {
   return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
-export function proxy(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // bỏ qua public + api
   if (isPublic(pathname) || pathname.startsWith("/api")) {
     return NextResponse.next();
   }
 
-  // check cookie
-  const hasAccess = req.cookies.get(ACCESS_COOKIE);
-  if (hasAccess) return NextResponse.next();
+  // ✅ tạm thời không chặn nữa (hoặc ít nhất bỏ /friends)
+  if (pathname.startsWith("/friends")) return NextResponse.next();
 
-  // chưa login -> về login
-  const url = req.nextUrl.clone();
-  url.pathname = "/auth/login";
-  url.searchParams.set("next", pathname);
-  return NextResponse.redirect(url);
+  return NextResponse.next();
 }
 
-// chặn các route private bạn cần
 export const config = {
-  matcher: ["/", "/friends/:path*", "/groups/:path*", "/profile/:path*", "/chat/:path*"],
+  matcher: ["/friends/:path*", "/groups/:path*", "/profile/:path*", "/chat/:path*"],
 };
