@@ -11,3 +11,4 @@ daphne
 uvicorn
 whitenoise
 dj-database-url
+resend
