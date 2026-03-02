@@ -30,16 +30,16 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
     activeThreadRootId ? messages.find((m) => m.id === activeThreadRootId) ?? null : null;
 
   function sendSeen(ws: WebSocket, msgs: Message[]) {
-  const lastReal = [...msgs].reverse().find((m) => m.id > 0);
-  if (!lastReal) return false;
+    const lastReal = [...msgs].reverse().find((m) => m.id > 0);
+    if (!lastReal) return false;
 
-  ws.send(JSON.stringify({
-    type: "read.seen",
-    last_seen_message_id: lastReal.id,
-  }));
+    ws.send(JSON.stringify({
+      type: "read.seen",
+      last_seen_message_id: lastReal.id,
+    }));
 
-  return true;
-}
+    return true;
+  }
 
   useEffect(() => {
     function close() {
@@ -54,11 +54,15 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
   }, []);
 
   useEffect(() => {
+    if (!conversationId) return;
     wsRef.current?.close();
-    wsRef.current = null;
+    // wsRef.current = null;
 
     const ws = new WebSocket(chatWsUrl(conversationId));
     wsRef.current = ws;
+    ws.onopen = () => console.log("ws open", conversationId);
+    ws.onclose = (e) => console.log("ws close", e.code, e.reason);
+    ws.onerror = (e) => console.log("ws error", e);
 
     ws.onmessage = (e) => {
       const data = JSON.parse(e.data);
@@ -93,16 +97,16 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
     return () => {
       ws.close();
     };
-  }, [conversationId, onSeen]);
+  }, [conversationId]);
 
   useEffect(() => {
-  const ws = wsRef.current;
-  if (!ws || ws.readyState !== WebSocket.OPEN) return;
-  if (!messages.length) return;
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (!messages.length) return;
 
-  const ok = sendSeen(ws, messages);
-  if (ok) onSeen?.(); // ✅ refresh unread ngay
-}, [messages, onSeen]);
+    const ok = sendSeen(ws, messages);
+    if (ok) onSeen?.(); // ✅ refresh unread ngay
+  }, [messages, onSeen]);
 
   useEffect(() => {
     const el = listRef.current;
@@ -267,25 +271,22 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
                 }}
               >
                 <div
-                  className={`max-w-[78%] rounded-2xl px-3 py-2 border ${
-                    isMine
+                  className={`max-w-[78%] rounded-2xl px-3 py-2 border ${isMine
                       ? "bg-sky-600 text-white border-sky-500"
                       : "bg-slate-900/40 text-slate-100 border-slate-800"
-                  } ${
-                    isThreadMessage
+                    } ${isThreadMessage
                       ? isMine
                         ? "ring-2 ring-amber-300/80 shadow-lg shadow-amber-200/20"
                         : "border-amber-400/80 bg-amber-950/20 ring-1 ring-amber-400/50"
                       : ""
-                  }`}
+                    }`}
                 >
                   {isThreadMessage && (
                     <div
-                      className={`mb-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                        isMine
+                      className={`mb-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${isMine
                           ? "bg-amber-200 text-amber-900"
                           : "bg-amber-400/20 text-amber-300 border border-amber-400/50"
-                      }`}
+                        }`}
                     >
                       Thread
                     </div>
