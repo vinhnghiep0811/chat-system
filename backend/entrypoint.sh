@@ -15,16 +15,19 @@ if not db_url:
 u = urlparse(db_url)
 print(f"DB host={u.hostname} port={u.port or 5432} db={u.path.lstrip('/') or 'postgres'}")
 
-for i in range(60):
+last_err = None
+for i in range(30):
     try:
-        conn = psycopg2.connect(db_url, connect_timeout=3)
+        conn = psycopg2.connect(db_url, connect_timeout=5)
         conn.close()
         print("Database is up!")
-        break
+        raise SystemExit(0)
     except Exception as e:
+        last_err = e
+        print(f"DB connect failed (try {i+1}/30): {type(e).__name__}: {e}")
         time.sleep(1)
-else:
-    raise SystemExit("Database not reachable after 60s")
+
+raise SystemExit(f"Database not reachable. Last error: {last_err}")
 PY
 
 python manage.py migrate --noinput
