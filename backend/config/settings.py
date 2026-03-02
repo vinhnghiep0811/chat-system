@@ -113,11 +113,13 @@ ASGI_APPLICATION = "config.asgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+REDIS_URL = os.getenv("REDIS_URL")
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("redis", 6379)],  # chạy trong docker
+            "hosts": [REDIS_URL] if REDIS_URL else [],
         },
     }
 }
