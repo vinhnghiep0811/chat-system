@@ -53,6 +53,16 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
     };
   }, []);
 
+  const onSeenRef = useRef(onSeen);
+  useEffect(() => {
+    onSeenRef.current = onSeen;
+  }, [onSeen]);
+
+  const messagesRef = useRef<Message[]>([]);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
   useEffect(() => {
     if (!conversationId) return;
     wsRef.current?.close();
@@ -60,7 +70,15 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
 
     const ws = new WebSocket(chatWsUrl(conversationId));
     wsRef.current = ws;
-    ws.onopen = () => console.log("ws open", conversationId);
+    ws.onopen = () => {
+      console.log("ws open", conversationId);
+
+      // gửi seen ngay khi open (nếu đã có messages)
+      if (messagesRef.current.length) {
+        const ok = sendSeen(ws, messagesRef.current);
+        if (ok) onSeenRef.current?.(); // refresh unread ngay (đỡ phụ thuộc read.updated)
+      }
+    };
     ws.onclose = (e) => console.log("ws close", e.code, e.reason);
     ws.onerror = (e) => console.log("ws error", e);
 
@@ -85,7 +103,7 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
       }
 
       if (data.type === "read.updated") {
-        onSeen?.();
+        onSeenRef.current?.();
       }
 
       if (data.type === "message.deleted") {
@@ -96,6 +114,7 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
 
     return () => {
       ws.close();
+      if (wsRef.current === ws) wsRef.current = null;
     };
   }, [conversationId]);
 
@@ -105,8 +124,8 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
     if (!messages.length) return;
 
     const ok = sendSeen(ws, messages);
-    if (ok) onSeen?.(); // ✅ refresh unread ngay
-  }, [messages, onSeen]);
+    if (ok) onSeenRef.current?.();
+  }, [messages]);
 
   useEffect(() => {
     const el = listRef.current;
