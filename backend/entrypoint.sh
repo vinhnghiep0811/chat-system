@@ -36,6 +36,8 @@ python manage.py migrate --noinput
 if [ "$#" -gt 0 ]; then
   exec "$@"
 fi
+echo "Checking ASGI import..."
+python -c "import config.asgi; print('ASGI import OK')"
 
-# Render cần lắng nghe đúng PORT mà nó cấp
-exec daphne -b 0.0.0.0 -p "${PORT:-8000}" config.asgi:application
+echo "Starting Daphne..."
+daphne -v 2 -b 0.0.0.0 -p "${PORT:-8000}" config.asgi:application
