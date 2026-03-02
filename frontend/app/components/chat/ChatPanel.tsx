@@ -30,16 +30,16 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
     activeThreadRootId ? messages.find((m) => m.id === activeThreadRootId) ?? null : null;
 
   function sendSeen(ws: WebSocket, msgs: Message[]) {
-    const lastReal = [...msgs].reverse().find((m) => m.id > 0);
-    if (!lastReal) return;
+  const lastReal = [...msgs].reverse().find((m) => m.id > 0);
+  if (!lastReal) return false;
 
-    ws.send(
-      JSON.stringify({
-        type: "read.seen",
-        last_seen_message_id: lastReal.id,
-      })
-    );
-  }
+  ws.send(JSON.stringify({
+    type: "read.seen",
+    last_seen_message_id: lastReal.id,
+  }));
+
+  return true;
+}
 
   useEffect(() => {
     function close() {
@@ -96,11 +96,13 @@ export default function ChatPanel({ onSeen, conversationId, title, myUserId }: P
   }, [conversationId, onSeen]);
 
   useEffect(() => {
-    const ws = wsRef.current;
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    if (!messages.length) return;
-    sendSeen(ws, messages);
-  }, [messages]);
+  const ws = wsRef.current;
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  if (!messages.length) return;
+
+  const ok = sendSeen(ws, messages);
+  if (ok) onSeen?.(); // ✅ refresh unread ngay
+}, [messages, onSeen]);
 
   useEffect(() => {
     const el = listRef.current;
