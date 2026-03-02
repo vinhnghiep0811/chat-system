@@ -6,12 +6,12 @@ def set_auth_cookies(response, access: str, refresh: str, secure: bool = False):
     common = dict(
         httponly=True,
         secure=True,
-        samesite=None,
+        samesite="None",
         path="/",
     )
     response.set_cookie("access_token", access, max_age=60 * 15, **common)
     response.set_cookie("refresh_token", refresh, max_age=60 * 60 * 24 * 7, **common)
 
 def clear_auth_cookies(response):
-    response.delete_cookie("access_token", path="/")
-    response.delete_cookie("refresh_token", path="/")
+    response.delete_cookie("access_token", path="/", samesite="None")
+    response.delete_cookie("refresh_token", path="/", samesite="None")
