@@ -62,8 +62,13 @@ export function sendThreadMessage(rootMessageId: number, content: string) {
 }
 
 export function chatWsUrl(conversationId: number) {
-  // dev local
-  return `ws://localhost:8000/ws/chat/${conversationId}/`;
+  const base =
+    process.env.NEXT_PUBLIC_WS_BASE ??
+    (process.env.NODE_ENV === "production"
+      ? "wss://chat-system-nx89.onrender.com"
+      : "ws://localhost:8000");
+
+  return `${base}/ws/chat/${conversationId}/`;
 }
 
 export function deleteMessage(messageId: number) {

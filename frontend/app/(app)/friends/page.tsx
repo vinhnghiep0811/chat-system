@@ -2,7 +2,7 @@
 
 import FriendsPanel from "@/app/components/friends/FriendsPanel";
 import ChatPanel from "@/app/components/chat/ChatPanel";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { apiFetch } from "@/lib/api";
 
 export default function FriendsPage() {
@@ -12,7 +12,9 @@ export default function FriendsPage() {
   const [activeFriend, setActiveFriend] = useState<{ id: number; username: string } | null>(null);
 
   const [refreshKey, setRefreshKey] = useState(0);
-
+  const handleSeen = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+  }, []);
   useEffect(() => {
     apiFetch<{ id: number }>("/api/users/me/", { method: "GET" })
       .then((me) => setMeId(me.id))
@@ -38,7 +40,7 @@ export default function FriendsPage() {
             myUserId={meId}
             conversationId={activeConversationId}
             title={activeFriend.username}
-            onSeen={() => setRefreshKey((k) => k + 1)} // Refresh unread count in sidebar after seen.
+            onSeen={handleSeen} // Refresh unread count in sidebar after seen.
           />
         ) : (
           <div className="h-full rounded-2xl border border-slate-800 bg-slate-900/30 grid place-items-center">
