@@ -5,8 +5,8 @@ def set_auth_cookies(response, access: str, refresh: str, secure: bool = False):
     print("DEBUG set_auth_cookies called from:\n", "".join(traceback.format_stack(limit=8)))
     common = dict(
         httponly=True,
-        secure=secure,
-        samesite="Lax",
+        secure=True,
+        samesite=None,
         path="/",
     )
     response.set_cookie("access_token", access, max_age=60 * 15, **common)
