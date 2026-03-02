@@ -6,27 +6,27 @@ echo "Waiting for database via DATABASE_URL (psycopg2)..."
 python - <<'PY'
 import os, time
 import psycopg2
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 db_url = os.environ.get("DATABASE_URL")
 if not db_url:
     raise SystemExit("DATABASE_URL is not set")
 
 u = urlparse(db_url)
-print(f"DB host={u.hostname} port={u.port or 5432} db={u.path.lstrip('/') or 'postgres'}")
+print("RAW DATABASE_URL:", db_url.replace(u.password or "", "***"))
+print("PARSED -> user:", u.username, "| host:", u.hostname, "| port:", u.port, "| db:", (u.path or "").lstrip("/"))
 
-last_err = None
-for i in range(30):
+last_err=None
+for i in range(5):
     try:
         conn = psycopg2.connect(db_url, connect_timeout=5)
         conn.close()
         print("Database is up!")
         raise SystemExit(0)
     except Exception as e:
-        last_err = e
-        print(f"DB connect failed (try {i+1}/30): {type(e).__name__}: {e}")
+        last_err=e
+        print(f"DB connect failed (try {i+1}/5): {type(e).__name__}: {e}")
         time.sleep(1)
-
 raise SystemExit(f"Database not reachable. Last error: {last_err}")
 PY
 
