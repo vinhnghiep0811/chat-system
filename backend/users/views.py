@@ -9,6 +9,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 
+from backend.users.email_service import send_verification_email
+
 from .serializers import (
     RegisterSerializer,
     LoginSerializer,
@@ -19,6 +21,10 @@ from .serializers import (
 from .token import make_email_verify_token, verify_email_token
 from .cookies import set_auth_cookies, clear_auth_cookies
 from .permissions import IsVerified
+
+import logging
+logger = logging.getLogger(__name__)
+
 User = get_user_model()
 
 class RegisterView(APIView):
@@ -36,22 +42,18 @@ class RegisterView(APIView):
         verify_url = f"{backend_url}/api/users/verify-email?token={token}"
 
         try:
-            send_mail(
-                subject="Verify your email",
-                message=f"Click to verify: {verify_url}",
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
-                fail_silently=False,
-            )
-        except Exception as e:
-            if created_now and not user.is_verified:
-                user.delete()
-            return Response(
-                {"error": "Could not send verification email. Please try again."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            send_verification_email(user.email, verify_url)
+            mail_sent = True
+        except Exception:
+            logger.exception("Resend send_verification_email failed user_id=%s", user.id)
+            mail_sent = False
+
         return Response(
-            {"message": "Registered. Please verify email." if created_now else "Email not verified yet. Verification email resent."},
+            {
+                "message": "Registered. Please verify email." if mail_sent
+                        else "Registered, but could not send verification email. Please use 'Resend verification email'.",
+                "mail_sent": mail_sent,
+            },
             status=status.HTTP_201_CREATED if created_now else status.HTTP_200_OK,
         )
 
