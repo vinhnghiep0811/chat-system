@@ -75,3 +75,17 @@ This project demonstrates building a **scalable real-time backend architecture**
 - **Render (deployment)**
 
 ---
+
+## 🎥 Demo
+
+### 🔗 Live Demo
+
+You can try the application here:
+
+**Frontend:**  
+👉 [Live Demo Link](https://chat-system-bay.vercel.app/auth/login)
+
+**Backend API:**  
+👉 [API Endpoint](https://chat-system-nx89.onrender.com)
+
+---
